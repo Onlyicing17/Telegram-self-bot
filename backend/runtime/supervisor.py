@@ -238,7 +238,9 @@ class RuntimeSupervisor:
             from backend.ai.engine.engine import get_engine
             engine = get_engine()
             from backend.bot.handlers.ai_cmd import configure as configure_ai_cmd
+            from backend.bot.handlers.ai_trigger import configure as configure_ai_trigger
             configure_ai_cmd(engine, self.owner_id, self.tz_str)
+            configure_ai_trigger(engine, self.owner_id, self.tz_str)
             logger.info("[1b/5] AI engine initialized (provider=%s)", engine.provider_manager.get_active_name())
         except Exception as exc:
             logger.warning("[1b/5] AI engine init failed: %s", exc)
