@@ -49,7 +49,7 @@ from backend.runtime.failsafe import start_failsafe, stop_failsafe, configure as
 from backend.bio import engine as bio_engine
 from backend.username import engine as username_engine
 from backend.bot.client import build_client
-from backend.bot.router import register_all
+from backend.bot.Router import register_all
 from backend.db import client as db_client
 from backend.diagnostics import record_event
 from backend.health import (
@@ -241,9 +241,20 @@ class RuntimeSupervisor:
             from backend.ai.engine.engine import get_engine
             engine = get_engine()
             from backend.bot.handlers.ai_cmd import configure as configure_ai_cmd
-            from backend.bot.handlers.ai_trigger import configure as configure_ai_trigger
+            from backend.bot.handlers.ai_unified import configure as configure_ai_unified
             configure_ai_cmd(engine, self.owner_id, self.tz_str)
-            configure_ai_trigger(engine, self.owner_id, self.tz_str)
+            configure_ai_unified(engine, self.owner_id, self.tz_str)
+
+            # ── Restore persisted AI config at startup ──
+            try:
+                from backend.ai.config_store import load_config, restore_on_startup
+                await load_config(self.owner_id)
+                await restore_on_startup(self.owner_id, engine)
+                trace("AI_CONFIGURATION_RESTORED", owner_id=self.owner_id)
+                logger.info("[1b/5] AI configuration restored from Supabase")
+            except Exception as restore_exc:
+                logger.warning("[1b/5] AI config restore failed: %s", restore_exc)
+
             logger.info("[1b/5] AI engine initialized (provider=%s)", engine.provider_manager.get_active_name())
         except Exception as exc:
             logger.warning("[1b/5] AI engine init failed: %s", exc)
